@@ -1,0 +1,4 @@
+public_controllers_v1:
+    type: annotation
+    resource: ../../src/Infrastructure/Delivery/Api/V1/Public/
+    prefix: /api/v1

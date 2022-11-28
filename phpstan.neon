@@ -1,0 +1,18 @@
+parameters:
+    paths:
+        - src
+        - tests
+
+    # The level 9 is the highest level but it's impossible to achieve
+    level: 8
+
+    excludePaths:
+        - .php-cs-fixer.dist.php
+
+    ignoreErrors:
+
+    checkMissingIterableValueType: false
+    checkGenericClassInNonGenericObjectType: false
+
+    parallel:
+        processTimeout: 300.0

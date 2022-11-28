@@ -1,0 +1,53 @@
+version: '3'
+services:
+    web:
+        image: nginx:1.17
+        container_name: invoices-webserver
+        depends_on:
+            - api
+        links:
+            - api
+        volumes:
+            - .:/home/invoices/app
+            - ./nginx.conf:/etc/nginx/conf.d/default.conf
+        ports:
+            - "8080:80"
+
+    api:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        image: invoices-api
+        container_name: invoices-api
+        volumes:
+            - .:/home/invoices/app
+
+    swagger-ui:
+        image: swaggerapi/swagger-ui:v4.14.2
+        restart: on-failure
+        container_name: invoices-swagger-ui
+        environment:
+            - SUPPORTED_SUBMIT_METHODS=["get","post","put","patch","delete"]
+            - URLS=[
+                {"name":"Invoices", "url":"http://localhost:8080/openapi.yaml"}
+                ]
+            - URLS_PRIMARY_NAME=Invoices
+            - VALIDATOR_URL=none
+            - DOM_ID=#swagger-ui
+            - DEEP_LINKING=true
+            - QUERY_CONFIG_ENABLED=true
+            - FILTER=true
+            - DISPLAY_REQUEST_DURATION=true
+            - DEFAULT_MODELS_EXPAND_DEPTH=10
+            - DEFAULT_MODEL_EXPAND_DEPTH=10
+            - PERSIST_AUTHORIZATION=true
+        depends_on:
+            - web
+        links:
+            - web
+        ports:
+            - '8088:8080'
+
+networks:
+    default:
+        name: invoices

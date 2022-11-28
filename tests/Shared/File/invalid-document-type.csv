@@ -1,0 +1,3 @@
+Customer,Vat number,Document number,Type,Parent document,Currency,Total
+Vendor 1,123456789,1000000257,5,,USD,400
+Vendor 1,123456789,1000000257,6,,USD,400

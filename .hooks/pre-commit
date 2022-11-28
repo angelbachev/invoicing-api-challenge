@@ -1,0 +1,64 @@
+#!/bin/sh
+
+# Start pre-commit hook
+echo "*** Start pre-commit hook ***"
+echo "*****************************"
+
+CONTAINER=invoices-api
+
+PHP_STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR  -- '*.php' | sed 's| |\\ |g')
+
+echo "*** Run php-cs-fixer on staged files ***"
+if [ ! -z "$PHP_STAGED_FILES" ]
+then
+  docker exec -t $CONTAINER php-cs-fixer fix --config .php-cs-fixer.dist.php $PHP_STAGED_FILES
+  EXIT_CODE=$?
+  if [ "$EXIT_CODE" -gt 0 ]
+  then
+    echo "\e[31m*** Fix php-cs-fixer errors ***\e[0m"
+    exit $EXIT_CODE
+  fi
+  git add $PHP_STAGED_FILES;
+  PHP_STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR  -- '*.php' | sed 's| |\\ |g')
+fi
+echo "*** Php-cs-fixer finished without errors ***"
+
+ALL_STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR)
+if [ -z "$ALL_STAGED_FILES" ]
+then
+    echo "\e[33m*** Nothing to commit ***\e[0m"
+    exit 1
+fi
+
+echo "\n*** Run phpstan ***"
+docker exec -t $CONTAINER vendor/bin/phpstan analyse -c phpstan.neon --memory-limit=4G
+EXIT_CODE=$?
+if [ "$EXIT_CODE" -gt 0 ]
+then
+  echo "\e[31m*** Fix phpstan errors ***\e[0m"
+  exit $EXIT_CODE
+fi
+echo "*** Phpstan finished without errors ***"
+
+echo "\n*** Run tests ***"
+docker exec -t $CONTAINER sh -c "bin/phpunit"
+EXIT_CODE=$?
+if [ "$EXIT_CODE" -gt 0 ]
+then
+  echo "\e[31m*** Fix tests ***\e[0m"
+  exit $EXIT_CODE
+fi
+echo "*** Tests finished without errors"
+
+echo "\n*** Run security checker ***"
+docker exec -t $CONTAINER sh -c "local-php-security-checker --update-cache && local-php-security-checker --no-dev"
+EXIT_CODE=$?
+if [ "$EXIT_CODE" -gt 0 ]
+then
+  echo "\e[31m*** Fix security checker errors ***\e[0m"
+  exit $EXIT_CODE
+fi
+echo "*** Security checker without errors ***"
+
+echo "\e[32m*** Pre-commit finished successfully ***\e[0m"
+echo "****************************************"
